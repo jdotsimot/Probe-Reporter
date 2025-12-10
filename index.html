@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNC Probe Reporter</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <header class="app-header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <h1>CNC Probe Reporter</h1>
+            </div>
+            <div class="header-controls">
+                <button class="btn-secondary" onclick="exportMarkdown()" id="btn-export-md" style="display:none">Export
+                    MD</button>
+                <button class="btn-primary" onclick="window.print()" id="btn-print" style="display:none">Print /
+                    PDF</button>
+                <button class="btn-secondary" onclick="resetApp()" id="btn-reset" style="display:none">New
+                    Dataset</button>
+            </div>
+            <div class="status-indicator">
+                <span id="status-text">Ready for Files</span>
+                <div class="status-dot ready"></div>
+            </div>
+        </header>
+
+        <main>
+            <!-- File Upload Section -->
+            <section class="upload-section">
+                <div class="drop-zone" id="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <polyline points="17 8 12 3 7 8" stroke-linecap="round" stroke-linejoin="round" />
+                            <line x1="12" y1="3" x2="12" y2="15" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <p class="primary-text">Drag & Drop Probe Files (.txt)</p>
+                        <p class="secondary-text">or click to browse folder</p>
+                    </div>
+                    <input type="file" id="file-input" multiple accept=".txt" hidden>
+                </div>
+            </section>
+
+            <!-- Dashboard Grid (Hidden initially) -->
+            <div id="dashboard" class="dashboard grid-hidden">
+
+                <!-- Job Overview Card -->
+                <div class="card job-card">
+                    <h2>Job Overview</h2>
+                    <div class="stat-row">
+                        <span class="label">Job ID</span>
+                        <span class="value" id="job-id">--</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Files Processed</span>
+                        <span class="value" id="file-count">0</span>
+                    </div>
+                </div>
+
+                <!-- Pass/Fail Card -->
+                <div class="card pass-fail-card">
+                    <h2>Inspection Status</h2>
+                    <div class="donut-chart-container">
+                        <canvas id="passFailChart"></canvas>
+                    </div>
+                    <div class="pf-legend">
+                        <div class="legend-item"><span class="dot pass"></span>Pass <span id="pass-count">0</span></div>
+                        <div class="legend-item"><span class="dot fail"></span>Fail <span id="fail-count">0</span></div>
+                    </div>
+                </div>
+
+                <!-- Stats Card -->
+                <div class="card stats-card">
+                    <h2>Z-Height Statistics (V78)</h2>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Average</span>
+                            <span class="stat-val" id="avg-height">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Range (Max-Min)</span>
+                            <span class="stat-val" id="range-height">--</span>
+                        </div>
+                        <div class="stat-item small">
+                            <span class="stat-label">Max</span>
+                            <span class="stat-val" id="max-height">--</span>
+                        </div>
+                        <div class="stat-item small">
+                            <span class="stat-label">Min</span>
+                            <span class="stat-val" id="min-height">--</span>
+                        </div>
+                    </div>
+                    <div class="tolerance-check" id="tolerance-check-container">
+                        <!-- Populated by JS -->
+                        <span class="check-icon">--</span> Waiting for Data
+                    </div>
+                </div>
+
+                <!-- Main Visualization Card -->
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h2>Part Height Distribution</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Data Table Card -->
+                <div class="card table-card">
+                    <h2>Detailed Data</h2>
+                    <div class="table-wrapper">
+                        <table id="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Part #</th>
+                                    <th>Time</th>
+                                    <th>Height (V78)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -74,8 +74,10 @@ async function handleFiles(fileList) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const content = e.target.result;
-                const result = parseFileContent(file.name, content);
-                if (result) parsedData.push(result);
+                const results = parseFileContent(file.name, content);
+                if (results && results.length > 0) {
+                    parsedData.push(...results);
+                }
                 resolve();
             };
             reader.onerror = reject;
@@ -114,29 +116,51 @@ function parseFileContent(filename, content) {
     // V78: 11.52921
     // Date: 2025-12-06 00:17:45
 
-    const partNumMatch = content.match(/Part Number:\s*(.+)/);
-    const dateMatch = content.match(/Date:\s*(.+)/);
-    const passFailMatch = content.match(/PassFail Enum:\s*(\d+)/);
-    const v78Match = content.match(/V78:\s*([\d.]+)/);
+    const reports = [];
+    // Split by the report header: *-*-* BEGIN PART PROBE REPORT *-*-*
+    const reportBlocks = content.split(/\*-\*-\*\s*BEGIN PART PROBE REPORT\s*\*-\*-\*/);
 
-    // If key data missing, skip or handle error
-    if (!v78Match) return null;
+    reportBlocks.forEach((block, index) => {
+        if (!block.trim()) return; // skip empty blocks
 
-    const passFailCode = passFailMatch ? parseInt(passFailMatch[1]) : 0;
+        const partNumMatch = block.match(/Part Number:\s*(.+)/);
+        const dateMatch = block.match(/Date:\s*(.+)/);
+        const passFailMatch = block.match(/PassFail Enum:\s*(\d+)/);
+        const v78Match = block.match(/V78:\s*([\d.]+)/);
 
-    // Determine Status
-    let status = 'Unknown';
-    if (passFailCode === 1) status = 'PASS';
-    else if (passFailCode === 4) status = 'FAIL';
+        // If key data missing, skip
+        if (!v78Match) return;
 
-    return {
-        filename: filename,
-        partNumber: partNumMatch ? partNumMatch[1].trim() : filename,
-        date: dateMatch ? dateMatch[1].trim() : '--',
-        v78: parseFloat(v78Match[1]),
-        status: status,
-        rawStatus: passFailCode
-    };
+        const passFailCode = passFailMatch ? parseInt(passFailMatch[1]) : 0;
+
+        // Determine Status
+        let status = 'Unknown';
+        if (passFailCode === 1) status = 'PASS';
+        else if (passFailCode === 4) status = 'FAIL';
+
+        // Add index suffix if more than one report in the file
+        // Or if we already have multiple blocks being processed
+        // We'll calculate the suffix after we know how many blocks we have
+        // But for now, let's just collect the data.
+
+        reports.push({
+            filename: filename,
+            partNumber: partNumMatch ? partNumMatch[1].trim() : filename,
+            date: dateMatch ? dateMatch[1].trim() : '--',
+            v78: parseFloat(v78Match[1]),
+            status: status,
+            rawStatus: passFailCode
+        });
+    });
+
+    // If multiple reports were in the file, add (1), (2), etc.
+    if (reports.length > 1) {
+        reports.forEach((report, i) => {
+            report.partNumber = `${report.partNumber} (${i + 1})`;
+        });
+    }
+
+    return reports;
 }
 
 // -- UI Updates --

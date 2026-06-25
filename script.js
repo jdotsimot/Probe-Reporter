@@ -389,3 +389,39 @@ function renderCharts(heights, passCount, failCount) {
         }
     });
 }
+
+function openFeedbackModal() {
+    document.getElementById('feedback-modal').style.display = 'flex';
+}
+
+function closeFeedbackModal() {
+    document.getElementById('feedback-modal').style.display = 'none';
+}
+
+function copyFeedbackEmail() {
+    const email = 'jrsimot@gmail.com';
+    navigator.clipboard.writeText(email).then(() => {
+        const btn = document.getElementById('btn-copy-email');
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        // Use existing theme colors for the copied state if possible, or fallback to green
+        btn.style.color = 'var(--success, #1e662c)';
+        btn.style.borderColor = 'var(--success, #1e662c)';
+
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+}
+
+// Close modal when clicking outside of the card
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('feedback-modal');
+    if (e.target === modal) {
+        closeFeedbackModal();
+    }
+});

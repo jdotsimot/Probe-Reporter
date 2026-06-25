@@ -479,3 +479,58 @@ td {
         border-bottom: 1px solid #ddd;
     }
 }
+/* Modal overlay styling - keeps design isolated and uses theme-compatible colors */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(9, 11, 14, 0.85); /* fallback dark overlay */
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.modal-card {
+    /* Uses app's card/panel background, or falls back to slate */
+    background: var(--bg-card, var(--panel-bg, #1e293b));
+    /* Uses app's text color, or falls back to light text */
+    color: var(--text-primary, #f1f5f9);
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 420px;
+    max-width: 90%;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    animation: slideDown 0.15s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color, #334155);
+    padding-bottom: 0.75rem;
+}
+
+.modal-close {
+    color: var(--text-secondary, #94a3b8);
+}
+
+.github-issue-section {
+    border-top: 1px solid var(--border-color, #334155);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-15px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
